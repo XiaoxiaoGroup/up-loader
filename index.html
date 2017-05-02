@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <script src="https://unpkg.com/console-polyfill@0.2.3"></script>
+    <script src="//cdn.bootcss.com/jquery/1.12.1/jquery.js"></script>
+    <script src="./dist/file-uploader.js"></script>
+</head>
+<body>
+<form name="demoForm" id="demoForm" method="post" enctype="multipart/form-data">
+    <p>Upload File:
+        <input type="file" name="file" id="file" multiple />
+    </p>
+    <p>
+        <input type="button" id="btn" value="Submit" />
+    </p>
+</form>
+<ol id="fileList">
+</ol>
+<script>
+    var uploader = file_uploader.init({
+        url: '/api/upload',
+        data: {
+            author: 'xx',
+            license: 'mit'
+        },
+        fileInput: document.getElementById('file'),
+        filter: function(files) {
+            console.log('filter: ', files);
+            return files;
+        },
+        onSelect: function(files) {
+            console.log('selected: ', files);
+            var fileListElement = document.getElementById('fileList');
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                var li = document.createElement('li');
+                li.setAttribute('id', 'file' + file.index)
+                li.innerText = file.name;
+                fileListElement.appendChild(li);
+            }
+        },
+        onFinish: function(file) {
+            console.log('deleted: ', file.index);
+            document.getElementById('file' + file.index).innerText = file.name + ' Uploaded';
+        },
+        onProgress: function(file, loaded, total) {
+            console.log('progressed: ', file, loaded, total);
+            document.getElementById('file' + file.index).innerHTML = file.name + ' Progessing (in Bytes): <span id="bytesRead">' + loaded + '</span> / <span id="bytesTotal">' + total + '</span>';
+        },
+        onSuccess: function(file, response) {
+            console.log('successed: ', file, response);
+        },
+        onFailure: function(file, err) {
+            console.log('faileured: ', file, err);
+        },
+        onComplete: function() {
+            console.log('conpleted');
+        }
+    });
+    document.getElementById('btn').onclick = function () {
+        uploader.upload();
+    };
+</script>
+</body>
+</html>
