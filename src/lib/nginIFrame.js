@@ -82,6 +82,9 @@ export default function NginIFrame(opts) {
 			})(file);
 		}
     }
+    this.destroy = function() {
+        
+    }
     
     /**
      * 创建iframe
