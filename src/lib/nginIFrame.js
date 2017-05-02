@@ -83,7 +83,7 @@ export default function NginIFrame(opts) {
 		}
     }
     this.destroy = function() {
-        
+        console.log('destroied');
     }
     
     /**
