@@ -4,6 +4,7 @@ export default function NginHtml5(opts) {
     this.getFiles = function (e) {
 		// 获取文件列表对象
 		var files = e.target.files || e.dataTransfer.files;
+        files = Array.prototype.call(files);
         // 过滤文件
         files = opts.filter(files);
         // 设置唯一索引
@@ -11,7 +12,7 @@ export default function NginHtml5(opts) {
             file.index = genId();
         });
 		//继续添加文件
-		opts.fileList = opts.fileList.concat([].slice.call(files));
+		opts.fileList = opts.fileList.concat(files);
         //执行选择回调
 		opts.onSelect(files);
 		return this;
