@@ -1,7 +1,6 @@
 import {addEvent, genId, forEach} from './util'
 
 export default function NginHtml5(opts) {
-    console.log('当前引擎为：HTML5');
     this.getFiles = function (e) {
 		// 获取文件列表对象
 		var files = e.target.files || e.dataTransfer.files;
@@ -10,7 +9,6 @@ export default function NginHtml5(opts) {
         // 设置唯一索引
         forEach(files, function (file) {
             file.index = genId();
-            console.log(file.id);
         });
 		//继续添加文件
 		opts.fileList = opts.fileList.concat([].slice.call(files));
@@ -19,47 +17,50 @@ export default function NginHtml5(opts) {
 		return this;
     }
     this.deleteFile = function(fileDelete) {
-        var arrFile = [];
-
-		for (var i = 0, file; file = opts.fileList[i]; i++) {
-			if (file != fileDelete) {
-				arrFile.push(file);
-			} else {
-				opts.onFinish(fileDelete);
-			}
-		}
-		opts.fileList = arrFile;
+        var index = opts.fileList.indexOf(fileDelete);
+        if (!~index) {
+            return this;
+        }
+        opts.fileList.splice(index, 1);
 		return this;
     }
     this.uploadFiles = function(e) {
         var self = this;
-		for (var i = 0, file; file = opts.fileList[i]; i++) {
-			(function(file) {
-                var data = new FormData();
-                for (var j in opts.data) {
-                    if (opts.data.hasOwnProperty(j)) {
-                        data.append(j, opts.data[j]);
-                    }
+		forEach(opts.fileList, function (file, i) {
+            var data = new FormData();
+            for (var j in opts.data) {
+                if (opts.data.hasOwnProperty(j)) {
+                    data.append(j, opts.data[j]);
                 }
-                data.append('file', file);
-                var xhr = new XMLHttpRequest();
-                xhr.onload = function(result) {
-                    opts.onSuccess(file, this.responseText);
-                    self.deleteFile(file);
-                    if (!opts.fileList.length) {
-                        //全部完毕
-                        opts.onComplete();
-                    }
+            }
+            data.append('file', file);
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                var result;
+                if (xhr.status < 200 || xhr >= 300) {
+                    return opts.onFailure(file, new Error('cannot post ' + opts.url + ' ' + xhr.status));
                 }
-                xhr.onerror = function (e) {
-                    opts.onFailure(file, e)
+                result = xhr.responseText || xhr.response;
+                if (opts.dataType == 'json' && result) {
+                    result = JSON.parse(result);
                 }
-                xhr.upload.onprogress = function (e) {
-                    opts.onProgress(file, e.loaded, e.total);
+                opts.onSuccess(file, result);
+                self.deleteFile(file);
+                opts.onFinish(file);
+                if (!opts.fileList.length) {
+                    //全部完毕
+                    opts.onComplete();
                 }
-                xhr.open('post', opts.url, true);
-                xhr.send(data);
-			})(file);
-		}
+            }
+            xhr.onerror = function (e) {
+                opts.onFailure(file, e);
+                opts.onFinish(file);
+            }
+            xhr.upload.onprogress = function (e) {
+                opts.onProgress(file, e.loaded, e.total);
+            }
+            xhr.open('post', opts.url, true);
+            xhr.send(data);
+		});
     }
 }

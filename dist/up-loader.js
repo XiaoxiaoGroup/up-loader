@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-    typeof define === 'function' && define.amd ? define(factory) :
-    (global.file_uploader = factory());
-}(this, function () { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define(['exports'], factory) :
+    (factory((global.uploader = global.uploader || {})));
+}(this, function (exports) { 'use strict';
 
     function noop() {}
 
@@ -89,7 +89,6 @@
     }
 
     function NginHtml5(opts) {
-        console.log('当前引擎为：HTML5');
         this.getFiles = function (e) {
     		// 获取文件列表对象
     		var files = e.target.files || e.dataTransfer.files;
@@ -98,7 +97,6 @@
             // 设置唯一索引
             forEach(files, function (file) {
                 file.index = genId();
-                console.log(file.id);
             });
     		//继续添加文件
     		opts.fileList = opts.fileList.concat([].slice.call(files));
@@ -107,53 +105,55 @@
     		return this;
         }
         this.deleteFile = function(fileDelete) {
-            var arrFile = [];
-
-    		for (var i = 0, file; file = opts.fileList[i]; i++) {
-    			if (file != fileDelete) {
-    				arrFile.push(file);
-    			} else {
-    				opts.onFinish(fileDelete);
-    			}
-    		}
-    		opts.fileList = arrFile;
+            var index = opts.fileList.indexOf(fileDelete);
+            if (!~index) {
+                return this;
+            }
+            opts.fileList.splice(index, 1);
     		return this;
         }
         this.uploadFiles = function(e) {
             var self = this;
-    		for (var i = 0, file; file = opts.fileList[i]; i++) {
-    			(function(file) {
-                    var data = new FormData();
-                    for (var j in opts.data) {
-                        if (opts.data.hasOwnProperty(j)) {
-                            data.append(j, opts.data[j]);
-                        }
+    		forEach(opts.fileList, function (file, i) {
+                var data = new FormData();
+                for (var j in opts.data) {
+                    if (opts.data.hasOwnProperty(j)) {
+                        data.append(j, opts.data[j]);
                     }
-                    data.append('file', file);
-                    var xhr = new XMLHttpRequest();
-                    xhr.onload = function(result) {
-                        opts.onSuccess(file, this.responseText);
-                        self.deleteFile(file);
-                        if (!opts.fileList.length) {
-                            //全部完毕
-                            opts.onComplete();
-                        }
+                }
+                data.append('file', file);
+                var xhr = new XMLHttpRequest();
+                xhr.onload = function() {
+                    var result;
+                    if (xhr.status < 200 || xhr >= 300) {
+                        return opts.onFailure(file, new Error('cannot post ' + opts.url + ' ' + xhr.status));
                     }
-                    xhr.onerror = function (e) {
-                        opts.onFailure(file, e)
+                    result = xhr.responseText || xhr.response;
+                    if (opts.dataType == 'json' && result) {
+                        result = JSON.parse(result);
                     }
-                    xhr.upload.onprogress = function (e) {
-                        opts.onProgress(file, e.loaded, e.total);
+                    opts.onSuccess(file, result);
+                    self.deleteFile(file);
+                    opts.onFinish(file);
+                    if (!opts.fileList.length) {
+                        //全部完毕
+                        opts.onComplete();
                     }
-                    xhr.open('post', opts.url, true);
-                    xhr.send(data);
-    			})(file);
-    		}
+                }
+                xhr.onerror = function (e) {
+                    opts.onFailure(file, e);
+                    opts.onFinish(file);
+                }
+                xhr.upload.onprogress = function (e) {
+                    opts.onProgress(file, e.loaded, e.total);
+                }
+                xhr.open('post', opts.url, true);
+                xhr.send(data);
+    		});
         }
     }
 
     function NginIFrame(opts) {
-        console.log('当前引擎为：IFrame');
         var self = this;
         this.getFiles = function (e) {
             var target = e.target || e.srcElement;
@@ -189,50 +189,56 @@
     		return this;
         }
         this.deleteFile = function(fileDelete) {
-            var arrFile = [];
-    		for (var i = 0, file; file = opts.fileList[i]; i++) {
-    			if (file != fileDelete) {
-    				arrFile.push(file);
-    			} else {
-                    // 删除iframe和form
-                    document.body.removeChild(document.getElementById(file.iframeId));
-                    document.body.removeChild(document.getElementById(file.formId));
-    				opts.onFinish(fileDelete);
-    			}
-    		}
-    		opts.fileList = arrFile;
+            // IE8及以下数组不支持indexOf，手动实现
+            var index = -1;
+            forEach(opts.fileList, function (file, i) {
+                if (file === fileDelete) {
+                    index = i;
+                }
+            });
+            if (!~index) {
+                return this;
+            }
+            var deletedFile = opts.fileList.splice(index, 1)[0];
+            if (deletedFile) {
+                // 删除iframe和form
+                document.body.removeChild(document.getElementById(deletedFile.iframeId));
+                document.body.removeChild(document.getElementById(deletedFile.formId));
+            }
     		return this;
         }
         this.uploadFiles = function(e) {
             var self = this;
-    		for (var i = 0, file; file = opts.fileList[i]; i++) {
-    			(function(file) {
-                    var ifm = document.getElementById(file.iframeId);
-                    addEvent(ifm, 'load', function() {
-                        try {
-                            // ie67不支持contentDocument,所以改用了contentWindow
-                            var result = ifm.contentWindow.document.body.innerHTML, eval2 = eval;
-                            // 如果配置dataType为json则解析json,否则直接返回字符串
-                            if (opts.dataType == 'json') {
-                                if (typeof JSON != 'undefined' && JSON.parse) {
-                                    result = JSON.parse(result);
-                                } else {
-                                    result = eval2('(' + result + ')');
-                                }
+    		forEach(opts.fileList, function (file, i) {
+                var ifm = document.getElementById(file.iframeId);
+                addEvent(ifm, 'load', function() {
+                    try {
+                        // ie67不支持contentDocument,所以改用了contentWindow
+                        var result = ifm.contentWindow.document.body.innerHTML, eval2 = eval;
+                        // 如果配置dataType为json则解析json,否则直接返回字符串
+                        if (opts.dataType == 'json') {
+                            if (typeof JSON != 'undefined' && JSON.parse) {
+                                result = JSON.parse(result);
+                            } else {
+                                result = eval2('(' + result + ')');
                             }
-                            opts.onSuccess(file, result);
-                        } catch (error) {
-                            opts.onFailure(file, error);
                         }
+                        opts.onSuccess(file, result);
                         self.deleteFile(file);
-                        if (!opts.fileList.length) {
-                            // 全部完毕
-                            opts.onComplete();
-                        }
-                    });
-                    document.getElementById(file.formId).submit();
-    			})(file);
-    		}
+                    } catch (error) {
+                        opts.onFailure(file, error);
+                    }
+                    opts.onFinish(deletedFile);
+                    if (!opts.fileList.length) {
+                        // 全部完毕
+                        opts.onComplete();
+                    }
+                });
+                document.getElementById(file.formId).submit();
+    		});
+        }
+        this.destroy = function() {
+            console.log('destroied');
         }
         
         /**
@@ -295,7 +301,7 @@
     		return files;
     	},
     	onSelect: noop,		            //文件选择后
-    	onDelete: noop,		            //文件删除后
+    	onFinish: noop,		            //文件删除后
     	onProgress: noop,		        //文件上传进度
     	onSuccess: noop,		        //文件上传成功时
     	onFailure: noop,		        //文件上传失败时,
@@ -303,34 +309,37 @@
     };
 
     function init(opts) {
-        return new (function () {
-            var self = this;
-            // 覆盖默认配置
-            this.opts = extend(defaultOpts, opts);
-            if (isSupportFormData()) {
-                // 如果支持FormData则使用Html5引擎
-                this.ngin = new NginHtml5(this.opts);
-            } else {
-                // 不支持则使用IFrame引擎
-                this.ngin = new NginIFrame(this.opts);
-            }
+        var instance = {
+            opts: extend(defaultOpts, opts)
+        };
+        
+        if (isSupportFormData()) {
+            // 如果支持FormData则使用Html5引擎
+            instance.ngin = new NginHtml5(instance.opts);
+        } else {
+            // 不支持则使用IFrame引擎
+            instance.ngin = new NginIFrame(instance.opts);
+        }
             
-            //文件选择控件选择
-    		if (this.opts.fileInput) {
-                addEvent(this.opts.fileInput, 'change', function(e) { self.ngin.getFiles(e); });
-    		}
-            
-            // 上传文件
-            this.upload = function() {
-                self.ngin.uploadFiles();
-            };
-        })();
+        //文件选择控件选择
+        if (instance.opts.fileInput) {
+            addEvent(instance.opts.fileInput, 'change', function(e) {
+                instance.ngin.getFiles(e);
+            });
+        }
+        
+        // 上传文件
+        instance.upload = function() {
+            this.ngin.uploadFiles();
+        };
+
+        return instance;
     }
 
     var index = {
         init: init
     }
 
-    return index;
+    exports['default'] = index;
 
 }));

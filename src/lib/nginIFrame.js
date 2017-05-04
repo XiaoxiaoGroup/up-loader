@@ -1,7 +1,6 @@
 import {extend, genId, addEvent, forEach} from './util'
 
 export default function NginIFrame(opts) {
-    console.log('当前引擎为：IFrame');
     var self = this;
     this.getFiles = function (e) {
         var target = e.target || e.srcElement;
@@ -37,50 +36,53 @@ export default function NginIFrame(opts) {
 		return this;
     }
     this.deleteFile = function(fileDelete) {
-        var arrFile = [];
-		for (var i = 0, file; file = opts.fileList[i]; i++) {
-			if (file != fileDelete) {
-				arrFile.push(file);
-			} else {
-                // 删除iframe和form
-                document.body.removeChild(document.getElementById(file.iframeId));
-                document.body.removeChild(document.getElementById(file.formId));
-				opts.onFinish(fileDelete);
-			}
-		}
-		opts.fileList = arrFile;
+        // IE8及以下数组不支持indexOf，手动实现
+        var index = -1;
+        forEach(opts.fileList, function (file, i) {
+            if (file === fileDelete) {
+                index = i;
+            }
+        });
+        if (!~index) {
+            return this;
+        }
+        var deletedFile = opts.fileList.splice(index, 1)[0];
+        if (deletedFile) {
+            // 删除iframe和form
+            document.body.removeChild(document.getElementById(deletedFile.iframeId));
+            document.body.removeChild(document.getElementById(deletedFile.formId));
+        }
 		return this;
     }
     this.uploadFiles = function(e) {
         var self = this;
-		for (var i = 0, file; file = opts.fileList[i]; i++) {
-			(function(file) {
-                var ifm = document.getElementById(file.iframeId);
-                addEvent(ifm, 'load', function() {
-                    try {
-                        // ie67不支持contentDocument,所以改用了contentWindow
-                        var result = ifm.contentWindow.document.body.innerHTML, eval2 = eval;
-                        // 如果配置dataType为json则解析json,否则直接返回字符串
-                        if (opts.dataType == 'json') {
-                            if (typeof JSON != 'undefined' && JSON.parse) {
-                                result = JSON.parse(result);
-                            } else {
-                                result = eval2('(' + result + ')');
-                            }
+		forEach(opts.fileList, function (file, i) {
+            var ifm = document.getElementById(file.iframeId);
+            addEvent(ifm, 'load', function() {
+                try {
+                    // ie67不支持contentDocument,所以改用了contentWindow
+                    var result = ifm.contentWindow.document.body.innerHTML, eval2 = eval;
+                    // 如果配置dataType为json则解析json,否则直接返回字符串
+                    if (opts.dataType == 'json') {
+                        if (typeof JSON != 'undefined' && JSON.parse) {
+                            result = JSON.parse(result);
+                        } else {
+                            result = eval2('(' + result + ')');
                         }
-                        opts.onSuccess(file, result);
-                    } catch (error) {
-                        opts.onFailure(file, error);
                     }
+                    opts.onSuccess(file, result);
                     self.deleteFile(file);
-                    if (!opts.fileList.length) {
-                        // 全部完毕
-                        opts.onComplete();
-                    }
-                });
-                document.getElementById(file.formId).submit();
-			})(file);
-		}
+                } catch (error) {
+                    opts.onFailure(file, error);
+                }
+                opts.onFinish(deletedFile);
+                if (!opts.fileList.length) {
+                    // 全部完毕
+                    opts.onComplete();
+                }
+            });
+            document.getElementById(file.formId).submit();
+		});
     }
     this.destroy = function() {
         console.log('destroied');
