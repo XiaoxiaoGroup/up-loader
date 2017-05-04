@@ -14,7 +14,7 @@ var defaultOpts = {
 		return files;
 	},
 	onSelect: noop,		            //文件选择后
-	onDelete: noop,		            //文件删除后
+	onFinish: noop,		            //文件删除后
 	onProgress: noop,		        //文件上传进度
 	onSuccess: noop,		        //文件上传成功时
 	onFailure: noop,		        //文件上传失败时,
@@ -22,28 +22,31 @@ var defaultOpts = {
 };
 
 function init(opts) {
-    return new (function () {
-        var self = this;
-        // 覆盖默认配置
-        this.opts = extend(defaultOpts, opts);
-        if (isSupportFormData()) {
-            // 如果支持FormData则使用Html5引擎
-            this.ngin = new NginHtml5(this.opts);
-        } else {
-            // 不支持则使用IFrame引擎
-            this.ngin = new NginIFrame(this.opts);
-        }
+    var instance = {
+        opts: extend(defaultOpts, opts)
+    };
+    
+    if (isSupportFormData()) {
+        // 如果支持FormData则使用Html5引擎
+        instance.ngin = new NginHtml5(instance.opts);
+    } else {
+        // 不支持则使用IFrame引擎
+        instance.ngin = new NginIFrame(instance.opts);
+    }
         
-        //文件选择控件选择
-		if (this.opts.fileInput) {
-            addEvent(this.opts.fileInput, 'change', function(e) { self.ngin.getFiles(e); });
-		}
-        
-        // 上传文件
-        this.upload = function() {
-            self.ngin.uploadFiles();
-        };
-    })();
+    //文件选择控件选择
+    if (instance.opts.fileInput) {
+        addEvent(instance.opts.fileInput, 'change', function(e) {
+            instance.ngin.getFiles(e);
+        });
+    }
+    
+    // 上传文件
+    instance.upload = function() {
+        this.ngin.uploadFiles();
+    };
+
+    return instance;
 }
 
 export default {

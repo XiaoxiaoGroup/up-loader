@@ -1,10 +1,12 @@
 {
   "name": "up-loader",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "description": "a file uploader for web",
-  "main": "dist/index.js",
+  "main": "dist/up-loader.js",
   "scripts": {
     "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "version": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

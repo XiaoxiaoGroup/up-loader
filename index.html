@@ -5,7 +5,7 @@
     <title>Document</title>
     <script src="https://unpkg.com/console-polyfill@0.2.3"></script>
     <script src="//cdn.bootcss.com/jquery/1.12.1/jquery.js"></script>
-    <script src="./dist/file-uploader.js"></script>
+    <script src="./dist/up-loader.js"></script>
 </head>
 <body>
 <form name="demoForm" id="demoForm" method="post" enctype="multipart/form-data">
@@ -19,7 +19,7 @@
 <ol id="fileList">
 </ol>
 <script>
-    var uploader = file_uploader.init({
+    var instance = uploader['default'].init({
         url: '/api/upload',
         data: {
             author: 'xx',
@@ -54,13 +54,14 @@
         },
         onFailure: function(file, err) {
             console.log('faileured: ', file, err);
+            throw err;
         },
         onComplete: function() {
-            console.log('conpleted');
+            console.log('completed');
         }
     });
     document.getElementById('btn').onclick = function () {
-        uploader.upload();
+        instance.upload();
     };
 </script>
 </body>
