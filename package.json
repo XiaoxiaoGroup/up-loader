@@ -1,6 +1,6 @@
 {
   "name": "up-loader",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "a file uploader for web",
   "main": "dist/up-loader.js",
   "scripts": {
