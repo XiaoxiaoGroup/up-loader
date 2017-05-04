@@ -75,7 +75,7 @@ export default function NginIFrame(opts) {
                 } catch (error) {
                     opts.onFailure(file, error);
                 }
-                opts.onFinish(deletedFile);
+                opts.onFinish(file);
                 if (!opts.fileList.length) {
                     // 全部完毕
                     opts.onComplete();
