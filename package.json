@@ -1,5 +1,5 @@
 {
-  "name": "file-uploader",
+  "name": "up-loader",
   "version": "0.0.2",
   "description": "a file uploader for web",
   "main": "dist/up-loader.js",
@@ -16,7 +16,6 @@
   "author": "xxapp",
   "license": "MIT",
   "devDependencies": {
-    "multer": "^1.1.0",
     "rollup": "^0.25.8"
   }
 }
