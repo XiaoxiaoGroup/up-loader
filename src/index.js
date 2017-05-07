@@ -36,9 +36,21 @@ function init(opts) {
         
     //文件选择控件选择
     if (instance.opts.fileInput) {
-        addEvent(instance.opts.fileInput, 'change', function(e) {
+        function handleChange(e) {
             instance.ngin.getFiles(e);
-        });
+            var oldFileInput = instance.opts.fileInput;
+            var parent = oldFileInput.parentNode;
+            if (parent) {
+                var newFileInput = document.createElement('input');
+                newFileInput.setAttribute('type', 'file');
+                newFileInput.setAttribute('name', 'file');
+                newFileInput.setAttribute('id', oldFileInput.id);
+                addEvent(newFileInput, 'change', handleChange);
+                parent.replaceChild(newFileInput, oldFileInput);
+                instance.opts.fileInput = newFileInput;
+            }
+        }
+        addEvent(instance.opts.fileInput, 'change', handleChange);
     }
     
     // 上传文件
