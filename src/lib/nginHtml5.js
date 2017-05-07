@@ -14,7 +14,7 @@ export default function NginHtml5(opts) {
 		//继续添加文件
 		opts.fileList = opts.fileList.concat(files);
         //执行选择回调
-		opts.onSelect(files);
+		opts.onSelect(files, opts.fileList);
 		return this;
     }
     this.deleteFile = function(fileDelete) {

@@ -30,7 +30,7 @@
             console.log('filter: ', files);
             return files;
         },
-        onSelect: function(files) {
+        onSelect: function(files, allFiles) {
             console.log('selected: ', files);
             var fileListElement = document.getElementById('fileList');
             for (var i = 0; i < files.length; i++) {

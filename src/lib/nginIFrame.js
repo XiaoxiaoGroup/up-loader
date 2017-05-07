@@ -32,7 +32,7 @@ export default function NginIFrame(opts) {
         });
 		opts.fileList = opts.fileList.concat(files);
         //执行选择回调
-		opts.onSelect(files);
+		opts.onSelect(files, opts.fileList);
 		return this;
     }
     this.deleteFile = function(fileDelete) {
