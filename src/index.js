@@ -1,4 +1,4 @@
-import {noop, extend, addEvent} from './lib/util'
+import {noop, merge, addEvent} from './lib/util'
 import isSupportFormData from './lib/isSupportFormData'
 import NginHtml5 from './lib/nginHtml5'
 import NginIFrame from './lib/nginIFrame'
@@ -23,7 +23,7 @@ var defaultOpts = {
 
 function init(opts) {
     var instance = {
-        opts: extend(defaultOpts, opts)
+        opts: merge(defaultOpts, opts)
     };
     
     if (isSupportFormData()) {

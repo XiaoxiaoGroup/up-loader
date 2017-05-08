@@ -1,18 +1,21 @@
 export function noop() {}
 
 /**
- * 扩展对象
- * @param {Object} dest 目标对象
- * @param {Object} src 源对象
+ * 合并对象
  */
-export function extend(dest, src) {
-    dest = dest || {};
-    for (var i in src) {
-        if (src.hasOwnProperty(i)) {
-            dest[i] = src[i];
+export function merge(dest, src) {
+    var r = {};
+    for (var i in dest) {
+        if (dest.hasOwnProperty(i)) {
+            r[i] = dest[i];
         }
     }
-    return dest;
+    for (var i in src) {
+        if (src.hasOwnProperty(i)) {
+            r[i] = src[i];
+        }
+    }
+    return r;
 }
 
 /**
