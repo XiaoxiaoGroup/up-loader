@@ -38,7 +38,7 @@ export default function NginHtml5(opts) {
             var xhr = new XMLHttpRequest();
             xhr.onload = function() {
                 var result;
-                if (xhr.status < 200 || xhr >= 300) {
+                if (xhr.status < 200 || xhr.status >= 300) {
                     return opts.onFailure(file, new Error('cannot post ' + opts.url + ' ' + xhr.status));
                 }
                 result = xhr.responseText || xhr.response;
